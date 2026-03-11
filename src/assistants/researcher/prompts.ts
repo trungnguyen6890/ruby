@@ -3,15 +3,15 @@ import { ResearchLevel, ResearchIntent, UserProfile, MemoryContext } from '../..
 import { getRubyPersonalityPrompt } from '../../services/personality/index';
 
 export function buildResearchPrompt(
-    level: ResearchLevel,
-    intent: ResearchIntent,
-    memory: MemoryContext,
-    sourceText: string,
-    query: string
+  level: ResearchLevel,
+  intent: ResearchIntent,
+  memory: MemoryContext,
+  sourceText: string,
+  query: string
 ): { systemPrompt: string; userPrompt: string } {
-    const personality = getRubyPersonalityPrompt(memory.userProfile);
+  const personality = getRubyPersonalityPrompt(memory.userProfile);
 
-    const userPrefs = memory.userProfile ? `
+  const userPrefs = memory.userProfile ? `
 ## User Profile Context
 - Preferred structure: ${memory.userProfile.output_preferences.preferred_structure}
 - Preferred tone: ${memory.userProfile.output_preferences.preferred_tone}
@@ -21,7 +21,7 @@ export function buildResearchPrompt(
 - Domain expertise: ${memory.userProfile.domain_expertise.primary.join(', ')}
 ` : '';
 
-    const topicContext = memory.topicBrief ? `
+  const topicContext = memory.topicBrief ? `
 ## Topic Context
 Chủ đề hiện tại đã được nghiên cứu trước đó:
 - Mô tả: ${memory.topicBrief.description}
@@ -30,15 +30,24 @@ Chủ đề hiện tại đã được nghiên cứu trước đó:
 - Nhánh tiếp theo: ${memory.topicBrief.nextBranches.join(', ')}
 ` : '';
 
-    const recentRunsContext = memory.recentRuns.length > 0 ? `
+  const recentRunsContext = memory.recentRuns.length > 0 ? `
 ## Recent Research on This Topic
 ${memory.recentRuns.map(r => `- [LV${r.level}] ${r.summary} (${r.created_at})`).join('\n')}
 ` : '';
 
-    const levelInstructions = getLevelInstructions(level);
-    const intentInstructions = getIntentInstructions(intent);
+  const levelInstructions = getLevelInstructions(level);
+  const intentInstructions = getIntentInstructions(intent);
 
-    const systemPrompt = `${personality}
+  const currentDate = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const timeContext = `
+## Time Context
+Thời gian hiện tại của hệ thống: ${currentDate}
+Tuyệt đối sử dụng mốc thời gian này làm mốc "hiện tại" (today) cho mọi nhận định và snapshot. Tránh dùng các mốc thời gian trong quá khứ làm mốc hiện tại.
+`;
+
+  const systemPrompt = `${personality}
+
+${timeContext}
 
 ${userPrefs}
 
@@ -140,7 +149,7 @@ Khi câu hỏi rơi vào Snapshot mode (Rule 2), BẮT BUỘC trả lời theo f
 Nếu tài liệu user conflict với nguồn công khai → ưu tiên tài liệu user, ghi chú xung đột.
 `;
 
-    const userPrompt = `${topicContext}
+  const userPrompt = `${topicContext}
 
 ${recentRunsContext}
 
@@ -152,13 +161,13 @@ ${sourceText || 'Không có tài liệu bổ sung.'}
 
 Hãy thực hiện nghiên cứu ở mức LV${level} và trả lời bằng tiếng Việt.`;
 
-    return { systemPrompt, userPrompt };
+  return { systemPrompt, userPrompt };
 }
 
 function getLevelInstructions(level: ResearchLevel): string {
-    switch (level) {
-        case 1:
-            return `### LV1 — Snapshot siêu nhanh, bắt mắt, dễ đọc trong chat
+  switch (level) {
+    case 1:
+      return `### LV1 — Snapshot siêu nhanh, bắt mắt, dễ đọc trong chat
 Bạn là Ruby – trợ lý market update cho anh Trung.
 
 Hãy viết lại nội dung tôi cung cấp thành một bản cập nhật LV1 theo phong cách chat-style, bắt mắt, dễ quét mắt, ngắn gọn nhưng vẫn có insight chính.
@@ -201,8 +210,8 @@ Quy tắc:
 - Ưu tiên khả năng đọc nhanh
 - Giữ lại các số liệu quan trọng nếu có`;
 
-        case 2:
-            return `### LV2 —Chat-style đẹp, có chiều sâu hơn, có scenario và action
+    case 2:
+      return `### LV2 —Chat-style đẹp, có chiều sâu hơn, có scenario và action
 
 Bạn là Ruby – trợ lý research và market intelligence cho anh Trung.
 
@@ -261,8 +270,8 @@ Quy tắc:
 9. 🧠 Ruby chốt nhanh
 10. CTA`;
 
-        case 3:
-            return `### LV3 — Bản chuyên nghiệp cho sếp / đối tác / stakeholder
+    case 3:
+      return `### LV3 — Bản chuyên nghiệp cho sếp / đối tác / stakeholder
 
 Bạn là Ruby – trợ lý phân tích thị trường và hỗ trợ tổng hợp thông tin cho anh Trung.
 
@@ -321,22 +330,22 @@ Quy tắc:
 - Không bê nguyên văn input
 - Phải làm cho văn bản trông sẵn sàng để gửi cho cấp quản lý hoặc đối tác`;
 
-        default:
-            return '';
-    }
+    default:
+      return '';
+  }
 }
 
 function getIntentInstructions(intent: ResearchIntent): string {
-    const instructions: Partial<Record<ResearchIntent, string>> = {
-        competitor: '## Intent: Phân tích đối thủ\nTập trung vào: positioning, strengths/weaknesses, market share, strategy, so sánh trực tiếp. Trình bày dạng bullet points, KHÔNG dùng bảng.',
-        regulation: '## Intent: Nghiên cứu quy định\nTập trung vào: regulatory landscape, compliance requirements, recent changes, implications, risks.',
-        company_profile: '## Intent: Hồ sơ công ty\nTập trung vào: overview, founding team, products, market position, funding, growth, strategy.',
-        benchmarking: '## Intent: Benchmarking\nTập trung vào: metrics comparison, industry standards, positioning. Trình bày dạng bullet points, KHÔNG dùng bảng.',
-        trend: '## Intent: Phân tích xu hướng\nTập trung vào: macro trends, drivers, timeline, implications, opportunities.',
-        ecosystem_mapping: '## Intent: Mapping ecosystem\nTập trung vào: key players, relationships, value chain, gaps, opportunities.',
-        due_diligence: '## Intent: Due diligence\nTập trung vào: risks, red flags, financials, team, market validation, competitive moat.',
-        overview: '## Intent: Tổng quan\nCung cấp bird-eye view đầy đủ, có cấu trúc, dễ nắm bắt.',
-    };
+  const instructions: Partial<Record<ResearchIntent, string>> = {
+    competitor: '## Intent: Phân tích đối thủ\nTập trung vào: positioning, strengths/weaknesses, market share, strategy, so sánh trực tiếp. Trình bày dạng bullet points, KHÔNG dùng bảng.',
+    regulation: '## Intent: Nghiên cứu quy định\nTập trung vào: regulatory landscape, compliance requirements, recent changes, implications, risks.',
+    company_profile: '## Intent: Hồ sơ công ty\nTập trung vào: overview, founding team, products, market position, funding, growth, strategy.',
+    benchmarking: '## Intent: Benchmarking\nTập trung vào: metrics comparison, industry standards, positioning. Trình bày dạng bullet points, KHÔNG dùng bảng.',
+    trend: '## Intent: Phân tích xu hướng\nTập trung vào: macro trends, drivers, timeline, implications, opportunities.',
+    ecosystem_mapping: '## Intent: Mapping ecosystem\nTập trung vào: key players, relationships, value chain, gaps, opportunities.',
+    due_diligence: '## Intent: Due diligence\nTập trung vào: risks, red flags, financials, team, market validation, competitive moat.',
+    overview: '## Intent: Tổng quan\nCung cấp bird-eye view đầy đủ, có cấu trúc, dễ nắm bắt.',
+  };
 
-    return instructions[intent] || '';
+  return instructions[intent] || '';
 }
