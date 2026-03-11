@@ -1,7 +1,7 @@
 // Ruby — Webhook Handler
 import { Env, TelegramUpdate, TelegramMessage, TelegramCallbackQuery } from '../shared/types';
 import { TelegramAPI } from './telegram';
-import { selectCTAs } from './cta';
+import { selectCTAs, CTA_POOL } from './cta';
 import { researchPipeline } from '../assistants/researcher/pipeline';
 import { handleCommand } from './commands';
 import { classifyRequest } from '../assistants/researcher/classifier';
@@ -124,6 +124,7 @@ async function handleCallbackQuery(
     if (!chatId || !query.data) return;
 
     const action = query.data;
+    const btnText = CTA_POOL[action]?.text || action;
 
     // Treat CTA callbacks as new research requests with context
     const ctaPrompts: Record<string, string> = {
@@ -138,12 +139,20 @@ async function handleCallbackQuery(
         'slide_outline': 'Chuẩn bị outline cho slide',
     };
 
-    const prompt = ctaPrompts[action] || action;
+    const actionPrompt = ctaPrompts[action] || action;
+    const previousMessageText = query.message?.text || query.message?.caption || '';
 
+    // Inject the actual text from the message the button was attached to 
+    // This allows offline operations like "summarize" without needing to fetch from DB
+    const finalPrompt = previousMessageText
+        ? `${actionPrompt}\n\nDưới đây là nội dung cần xử lý:\n\n"""\n${previousMessageText}\n"""`
+        : actionPrompt;
+
+    await telegram.answerCallbackQuery(query.id, `Đang xử lý: ${btnText}...`);
     await telegram.sendChatAction(chatId, 'typing');
-    await telegram.sendMessage(chatId, '🔍 Ruby đang xử lý...');
+    await telegram.sendMessage(chatId, `⚡️ Đã nhận yêu cầu: **${btnText}**\n\n🔍 Ruby đang xử lý...`, { parseMode: 'Markdown' });
 
-    const inputs = [{ type: 'text', content: prompt }];
+    const inputs = [{ type: 'text', content: finalPrompt }];
 
     await env.RESEARCH_QUEUE.send({
         type: 'research',
