@@ -1,0 +1,26 @@
+name = "ruby-assistant"
+main = "src/index.ts"
+compatibility_date = "2025-03-10"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["0 * * * *"]  # Hourly check for scheduled research
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ruby-db"
+database_id = "d1979dbd-db1c-4a65-8034-f84efc5a5ce2"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "ruby-storage"
+
+[[queues.producers]]
+binding = "RESEARCH_QUEUE"
+queue = "ruby-queue"
+
+[[queues.consumers]]
+queue = "ruby-queue"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 0
