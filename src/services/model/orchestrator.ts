@@ -51,7 +51,7 @@ export class ModelOrchestrator {
         const url = `${GEMINI_API_BASE}/models/${modelName}:generateContent?key=${this.env.GEMINI_API_KEY}`;
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout to prevent Cloudflare Worker silent kill
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout instead of 25s
 
         let response: Response;
         try {
@@ -63,7 +63,7 @@ export class ModelOrchestrator {
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                throw new ModelError(`Model API timed out after 25s. (Model: ${modelName})`);
+                throw new ModelError(`Model API timed out after 120s. (Model: ${modelName})`);
             }
             throw new ModelError(`Failed to reach model API: ${error}`);
         } finally {

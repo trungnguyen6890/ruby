@@ -95,16 +95,22 @@ async function handleMessage(message: TelegramMessage, telegram: TelegramAPI, en
 
     // Run research pipeline
     let result;
+    const notifyTimeout = setTimeout(() => {
+        telegram.sendMessage(chatId, '⏳ Câu hỏi này khá sâu nên Ruby cần thêm chút thời gian để tổng hợp, Anh Trung đợi Ruby xíu nhé...').catch(console.error);
+    }, 25000);
+
     try {
         result = await researchPipeline(inputs, env, chatId, classification);
     } catch (error: any) {
         console.error('Pipeline error:', error);
         if (error.name === 'ModelError' || (error.message && error.message.includes('timed out'))) {
-            await telegram.sendMessage(chatId, '⏱️ Xin lỗi Anh Trung, câu hỏi này hơi phức tạp nên hệ thống AI trả lời quá lâu (vượt quá 30s). Anh thử chia nhỏ câu hỏi ra hoặc hỏi lại giúp Ruby nhé! 🙇‍♀️');
+            await telegram.sendMessage(chatId, '⏱️ Xin lỗi Anh Trung, hệ thống AI trả lời quá lâu (vượt quá 120s đoạn chờ). Anh thử chia nhỏ câu hỏi ra hoặc hỏi lại giúp Ruby nhé! 🙇‍♀️');
         } else {
             await telegram.sendMessage(chatId, '❌ Xin lỗi Anh Trung, Ruby gặp lỗi khi xử lý dữ liệu. Anh thử lại sau nhé!');
         }
         return;
+    } finally {
+        clearTimeout(notifyTimeout);
     }
 
     // Send result with CTAs
@@ -150,16 +156,22 @@ async function handleCallbackQuery(
     const inputs = [{ type: 'text', content: prompt }];
 
     let result;
+    const notifyTimeout = setTimeout(() => {
+        telegram.sendMessage(chatId, '⏳ Thao tác này cần phân tích kỹ nên Ruby vẫn đang xử lý, Anh Trung đợi Ruby thêm chút nhé...').catch(console.error);
+    }, 25000);
+
     try {
         result = await researchPipeline(inputs, env, chatId);
     } catch (error: any) {
         console.error('Pipeline callback error:', error);
         if (error.name === 'ModelError' || (error.message && error.message.includes('timed out'))) {
-            await telegram.sendMessage(chatId, '⏱️ Xin lỗi Anh Trung, thao tác này mất quá nhiều thời gian (vượt quá 30s). Anh thử lại thao tác khác giúp Ruby nhé! 🙇‍♀️');
+            await telegram.sendMessage(chatId, '⏱️ Xin lỗi Anh Trung, thao tác này mất quá nhiều thời gian (vượt quá 120s đoạn chờ). Anh thử lại thao tác khác giúp Ruby nhé! 🙇‍♀️');
         } else {
             await telegram.sendMessage(chatId, '❌ Xin lỗi Anh Trung, Ruby gặp lỗi khi xử lý. Anh thử lại sau nhé!');
         }
         return;
+    } finally {
+        clearTimeout(notifyTimeout);
     }
 
     const ctas = selectCTAs(result.level, result.intent);
