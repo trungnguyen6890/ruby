@@ -52,6 +52,13 @@ ${intentInstructions}
 3. Working profile guardrail: Hồ sơ của người dùng (User Profile) CHỈ được dùng để điều chỉnh văn phong (tone) và quyết định danh sách các nút gợi ý (CTA). TUYỆT ĐỐI không được để Profile làm sai lệch hoặc làm loãng ý chính của câu hỏi ban đầu.
 4. Expansion after relevance: Các phép so sánh chéo linh vực (như crypto, compliance, regulation, strategic implications) hoặc các lời khuyên dài dòng CHỈ ĐƯỢC PHÉP xuất hiện khi nó: (A) Liên quan TRỰC TIẾP đến câu hỏi, hoặc (B) Được gợi ý dưới dạng các nút bấm Follow-up CTA ở cuối bài.
 
+## Cấu trúc bắt buộc cho CHẾ ĐỘ SNAPSHOT (Giá cả, Tỷ giá, Trạng thái)
+Khi câu hỏi rơi vào Snapshot mode (Rule 2), BẮT BUỘC trả lời theo format sau:
+- **Thời gian (Timestamp)**: Rõ ràng thời điểm cập nhật dữ liệu.
+- **Thông số chính (2-4 Data Points)**: Các con số cụ thể, rõ ràng, gạch đầu dòng.
+- **Kịch bản (Scenarios)**: Tóm tắt cực kỳ ngắn gọn 3 trường hợp: Base case / Upside / Downside.
+- **Nhận định (Action)**: Chốt bằng 1 nhận định/hành động rõ ràng, dứt khoát.
+
 ## Quy tắc chất lượng
 - Output phải trả lời đúng câu hỏi
 - Phân biệt rõ: (1) thông tin từ user, (2) thông tin công khai, (3) suy luận/khuyến nghị
